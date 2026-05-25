@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>筆 PostCraft — X投稿ジェネレーター</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <span class="icon">🖊</span>
+      <h1>筆 PostCraft</h1>
+      <span class="badge">X投稿ジェネレーター</span>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>クライアント</h3>
+      </div>
+      <div id="client-list"></div>
+      <div class="sidebar-section" style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+        <h3>ペルソナ管理</h3>
+      </div>
+      <button class="sidebar-btn" onclick="openPersonaModal()">+ 新規ペルソナ</button>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div id="welcome" class="empty-state">
+        <div class="icon">🖊</div>
+        <p>左のサイドバーからクライアントを選択してください</p>
+      </div>
+
+      <div id="main-content" style="display: none;">
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab active" data-tab="generate" onclick="switchTab('generate')">生成</button>
+          <button class="tab" data-tab="stock" onclick="switchTab('stock')">ストック</button>
+          <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">カレンダー</button>
+        </div>
+
+        <!-- Generate Tab -->
+        <div id="tab-generate" class="tab-content active">
+          <div class="gen-controls">
+            <div class="control-group">
+              <label>ペルソナ</label>
+              <select id="persona-select">
+                <option value="">（ペルソナなし）</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>日数</label>
+              <select id="days-select">
+                <option value="3">3日分（9本）</option>
+                <option value="5">5日分（15本）</option>
+                <option value="7" selected>7日分（21本）</option>
+                <option value="14">14日分（42本）</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="generate-btn" onclick="startGenerate()">
+              🚀 生成開始
+            </button>
+            <button class="btn btn-success" id="save-btn" onclick="saveToStock()" style="display:none;">
+              💾 ストックに保存
+            </button>
+          </div>
+
+          <div class="progress-bar" id="progress">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="status-msg" id="status"></div>
+
+          <!-- Score summary -->
+          <div id="score-summary" style="display:none;">
+            <div class="summary-bar">
+              <div class="stat-card">
+                <div class="label">投稿数</div>
+                <div class="value" id="stat-total">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Sランク</div>
+                <div class="value" style="color: var(--rank-s);" id="stat-s">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">Aランク</div>
+                <div class="value" style="color: var(--rank-a);" id="stat-a">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="label">平均スコア</div>
+                <div class="value" id="stat-avg">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output -->
+          <div id="generate-output"></div>
+        </div>
+
+        <!-- Stock Tab -->
+        <div id="tab-stock" class="tab-content">
+          <div id="stock-list" class="stock-list"></div>
+          <div id="stock-viewer" style="display:none;">
+            <button class="btn btn-secondary" onclick="closeStockViewer()" style="margin-bottom: 12px;">← 戻る</button>
+            <div id="stock-content" class="stream-output"></div>
+          </div>
+        </div>
+
+        <!-- Calendar Tab -->
+        <div id="tab-calendar" class="tab-content">
+          <div id="calendar-view"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Persona Modal -->
+  <div class="modal-overlay" id="persona-modal">
+    <div class="modal">
+      <h2 id="persona-modal-title">新規ペルソナ作成</h2>
+      <label style="font-size:12px; color:var(--text2);">ペルソナ名</label>
+      <input type="text" id="persona-name" placeholder="例: ともこ">
+      <label style="font-size:12px; color:var(--text2);">ペルソナ定義</label>
+      <textarea id="persona-def" placeholder="# ペルソナ定義: ともこ
+- 年齢: 42歳
+- 職業: パート主婦
+- 家族: 夫(会社員)、長男(中1)、次男(小学生)
+- 収入: パート月8万 + 古着副業月8〜10万
+- 悩み: 家計の不足
+- 口調: ですます + 時々くだけた表現"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closePersonaModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="savePersona()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stock Detail Modal -->
+  <div class="modal-overlay" id="post-modal">
+    <div class="modal" style="width: 600px;">
+      <div class="post-header">
+        <h3 id="post-modal-title"></h3>
+        <span id="post-modal-score" class="rank-badge"></span>
+      </div>
+      <div id="post-modal-body" class="post-preview" style="border:none; padding:0;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closePostModal()">閉じる</button>
+        <button class="btn btn-primary" onclick="copyPost()">📋 コピー</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

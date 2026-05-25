@@ -1,0 +1,13 @@
+{
+  "name": "x-post-generator",
+  "version": "1.0.0",
+  "description": "X投稿バッチ生成・ストック管理",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "@anthropic-ai/sdk": "^0.52.0"
+  }
+}
